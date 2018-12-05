@@ -4,11 +4,10 @@
         <!-- 徽标文本，为空时显示一个小红点 -->
         <attr name="BadgeLayoutText" format="string" />
         <!-- 徽标高度，宽度自适应 -->
-        <attr name="BadgeLayoutHeight" format="dimension" />
+        <attr name="BadgeSize" format="dimension" />
         <!-- 徽标背景色，文本白色 -->
         <attr name="BadgeLayoutColor" format="color" />
         <!-- 徽标是否可见 -->
         <attr name="BadgeLayoutVisible" format="boolean" />
-        <attr name="BadgeLayoutPadding" format="dimension" />
     </declare-styleable>
 </resources>

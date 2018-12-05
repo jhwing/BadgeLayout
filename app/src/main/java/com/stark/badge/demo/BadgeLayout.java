@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.FrameLayout;
 
 public class BadgeLayout extends FrameLayout {
@@ -34,13 +35,11 @@ public class BadgeLayout extends FrameLayout {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.BadgeLayout);
         String badgeText = a.getString(R.styleable.BadgeLayout_BadgeLayoutText);
         int badgeColor = a.getColor(R.styleable.BadgeLayout_BadgeLayoutColor, 0xffFF4081);
-        int badgeHeight = a.getDimensionPixelSize(R.styleable.BadgeLayout_BadgeLayoutHeight, (int) (getResources().getDisplayMetrics().density * 12));
-        int badgePadding = a.getDimensionPixelSize(R.styleable.BadgeLayout_BadgeLayoutPadding, (int) (getResources().getDisplayMetrics().density * 12));
+        int badgeHeight = a.getDimensionPixelSize(R.styleable.BadgeLayout_BadgeSize, (int) (getResources().getDisplayMetrics().density * 12));
         boolean badgeVisible = a.getBoolean(R.styleable.BadgeLayout_BadgeLayoutVisible, false);
         a.recycle();
-
         setWillNotDraw(false);
-        mBadgeDrawable = new BadgeDrawable(badgeHeight, badgeColor, badgePadding);
+        mBadgeDrawable = new BadgeDrawable(badgeHeight, badgeColor);
         mBadgeDrawable.setVisible(badgeVisible);
         mBadgeDrawable.setText(badgeText);
     }
@@ -56,8 +55,14 @@ public class BadgeLayout extends FrameLayout {
         mBadgeDrawable.layout(left, top, right, bottom);
     }
 
+    public BadgeLayout setBadgeColor(int argb) {
+        mBadgeDrawable.setColor(argb);
+        return this;
+    }
+
     public BadgeLayout setBadgeText(String text) {
         mBadgeDrawable.setText(text);
+        invalidate();
         return this;
     }
 
@@ -84,33 +89,58 @@ public class BadgeLayout extends FrameLayout {
         private boolean mIsVisible;
         private TextPaint mPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-        private int mSize = 0;
-        int mPadding = 0;
+        private int mSize;
+        private int mParentWidth;
+        private int mWidth;
+        private int mHeight;
 
-        public BadgeDrawable(int height, int color, int padding) {
-
+        public BadgeDrawable(int size, int color) {
             setColor(color);
             setAlpha(0xFF);
 
             mPaint.setColor(0xffffffff);
             mPaint.setTextAlign(Paint.Align.CENTER);
-            mPaint.setTextSize(height * 0.75f);
+            mPaint.setTextSize(size * 0.75f);
 
-            mSize = height;
-            mPadding = padding;
+            mSize = size;
+            mWidth = mSize;
+            mHeight = mSize;
+            mParentWidth = mSize;
         }
 
         void layout(int left, int top, int right, int bottom) {
-            int width = right - left;
-            Rect rect = getBounds();
-            int dotWidth = rect.width();
-            rect.offset(width - dotWidth, 0);
-            setBounds(rect);
+            mParentWidth = right - left;
+            updateBounds();
+        }
+
+        @Override
+        public void setBounds(int left, int top, int right, int bottom) {
+            Rect oldBounds = getBounds();
+
+            if (oldBounds.left != left || oldBounds.top != top ||
+                    oldBounds.right != right || oldBounds.bottom != bottom) {
+                if (!oldBounds.isEmpty()) {
+                    // first invalidate the previous bounds
+                    invalidateSelf();
+                }
+                oldBounds.set(left, top, right, bottom);
+                onBoundsChange(oldBounds);
+            }
+        }
+
+        private void updateBounds() {
+            Rect newRect = new Rect();
+            newRect.right = mParentWidth;
+            newRect.top = 0;
+            newRect.left = mParentWidth - Math.min(mParentWidth, mWidth);
+            newRect.bottom = mHeight;
+            setBounds(newRect);
         }
 
         void resize(int w, int h) {
-            Rect rect = getBounds();
-            setBounds(rect.left, rect.top, rect.left + w, rect.top + h);
+            mWidth = w;
+            mHeight = h;
+            updateBounds();
             invalidateSelf();
         }
 
